@@ -5,11 +5,13 @@ import urllib.parse
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from datetime import datetime
+from db import get_session, Comment
 
 # 載入環境變數
 load_dotenv()
 
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+YOUTUBE_API_KEY = "AIzaSyCNPheoWxncz-ODUzL4yMT7a5G5rv3iFhU"
 
 def extract_video_id(url: str) -> str:
     """從 YouTube 網址中萃取 Video ID"""
@@ -74,6 +76,8 @@ def fetch_top_comments(video_url: str, max_results: int = 1000) -> list:
                     continue
                     
                 comments.append({
+                    'comment_id': item['id'],
+                    'video_id': video_id,
                     'author': snippet['authorDisplayName'],
                     'text': cleaned_text,
                     'like_count': snippet['likeCount'],
@@ -96,18 +100,39 @@ def fetch_top_comments(video_url: str, max_results: int = 1000) -> list:
 
 if __name__ == "__main__":
     # 測試用網址 (可以替換成你想測試的影片)
-    test_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    test_url = "https://www.youtube.com/watch?v=aI6ChX9kbvs"
     
     try:
         # 為了測試方便，這裡先抓 50 筆
         results = fetch_top_comments(test_url, max_results=50)
         
-        # 存檔檢查結果
-        output_file = "sample_comments.json"
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
+        if results:
+            session = get_session()
+            new_count = 0
+            for item in results:
+                # 檢查資料庫是否已存在該留言
+                existing = session.query(Comment).filter_by(comment_id=item['comment_id']).first()
+                if not existing:
+                    # 解析 YouTube API 回傳的 ISO 8601 時間字串
+                    # 例如 "2009-10-25T06:57:33Z"
+                    pub_time = datetime.strptime(item['published_at'], "%Y-%m-%dT%H:%M:%SZ")
+                    
+                    comment_db = Comment(
+                        comment_id=item['comment_id'],
+                        video_id=item['video_id'],
+                        author=item['author'],
+                        text=item['text'],
+                        like_count=item['like_count'],
+                        published_at=pub_time
+                    )
+                    session.add(comment_db)
+                    new_count += 1
             
-        print(f"結果已儲存至 {output_file}")
+            session.commit()
+            session.close()
+            print(f"成功將 {new_count} 筆新留言寫入資料庫。")
+        else:
+            print("沒有抓取到任何留言。")
         
     except Exception as e:
         print(f"執行失敗: {e}")
