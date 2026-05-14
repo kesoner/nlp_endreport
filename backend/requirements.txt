@@ -7,3 +7,7 @@ tqdm
 cryptography==38.0.4
 accelerate
 bertopic
+snownlp
+streamlit
+wordcloud
+matplotlib

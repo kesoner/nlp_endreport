@@ -7,7 +7,7 @@ import pandas as pd
 def load_llm():
     print("正在載入本地 LLM (Qwen2.5-1.5B-Instruct)...")
     model_name = "Qwen/Qwen2.5-1.5B-Instruct"
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cpu" if torch.cuda.is_available() else "cuda"
     
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -37,8 +37,30 @@ def analyze_topics(video_id=None):
         session.close()
         return
 
-    print(f"準備對 {len(comments)} 筆留言進行 BERTopic 分群...")
+    from snownlp import SnowNLP
+
+    print(f"準備對 {len(comments)} 筆留言進行 BERTopic 分群與情緒分析...")
     texts = [c.text for c in comments]
+
+    print("正在執行情緒分析 (SnowNLP)...")
+    for c in comments:
+        if not c.text.strip():
+            c.sentiment_score = 0.5
+            c.sentiment_label = "中立"
+            continue
+        try:
+            s = SnowNLP(c.text)
+            score = s.sentiments
+            c.sentiment_score = score
+            if score >= 0.6:
+                c.sentiment_label = "正向"
+            elif score <= 0.4:
+                c.sentiment_label = "負向"
+            else:
+                c.sentiment_label = "中立"
+        except Exception:
+            c.sentiment_score = 0.5
+            c.sentiment_label = "中立"
 
     # 1. 初始化 BERTopic (自動處理 Embedding, UMAP, HDBSCAN, c-TF-IDF)
     # 語言設為 multilingual 支援中文

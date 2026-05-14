@@ -11,7 +11,7 @@ from db import get_session, Comment
 # 載入環境變數
 load_dotenv()
 
-YOUTUBE_API_KEY = "AIzaSyCNPheoWxncz-ODUzL4yMT7a5G5rv3iFhU"
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 def extract_video_id(url: str) -> str:
     """從 YouTube 網址中萃取 Video ID"""
@@ -100,14 +100,26 @@ def fetch_top_comments(video_url: str, max_results: int = 1000) -> list:
 
 if __name__ == "__main__":
     # 測試用網址 (可以替換成你想測試的影片)
-    test_url = "https://www.youtube.com/watch?v=aI6ChX9kbvs"
+    test_url = "https://www.youtube.com/watch?v=UIVtl1AclxA"
     
     try:
-        # 為了測試方便，這裡先抓 50 筆
-        results = fetch_top_comments(test_url, max_results=50)
+        # 將 max_results 設為一個極大的數字(例如 999999)，就可以不斷翻頁直到抓完所有留言。
+        # 注意：若影片留言高達數萬筆，會花費較長的時間，且會消耗較多 YouTube API 的每日額度。
+        results = fetch_top_comments(test_url, max_results=999999)
         
         if results:
             session = get_session()
+            
+            # 清空舊的留言紀錄，確保每次分析都是針對單一影片
+            print("正在清空舊資料庫...")
+            try:
+                deleted_count = session.query(Comment).delete()
+                session.commit()
+                print(f"已清空 {deleted_count} 筆歷史留言。")
+            except Exception as e:
+                session.rollback()
+                print(f"清空資料庫時發生錯誤: {e}")
+
             new_count = 0
             for item in results:
                 # 檢查資料庫是否已存在該留言

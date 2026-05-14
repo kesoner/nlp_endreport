@@ -19,6 +19,10 @@ class Comment(Base):
     like_count = Column(Integer, default=0, comment="按讚數")
     published_at = Column(DateTime, comment="發布時間")
     
+    # 情緒分析欄位
+    sentiment_score = Column(Float, nullable=True, comment="SnowNLP 情緒分數 (0~1)")
+    sentiment_label = Column(String, nullable=True, comment="情緒標籤 (正向/負向/中立)")
+    
     # 後續 NLP (Topic Modeling) 處理的欄位
     topic_id = Column(Integer, nullable=True, index=True, comment="BERTopic 分群 ID (-1 表雜訊)")
     topic_keywords = Column(String, nullable=True, comment="該群組的代表性關鍵字")

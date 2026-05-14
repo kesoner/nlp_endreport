@@ -7,14 +7,15 @@
 ## 🌟 核心功能
 
 1. **自動化資料採集**：透過 YouTube Data API v3 精準抓取熱門留言，並自動清洗髒資料 (如網址、多餘空白)。
-2. **高效能主題分群 (BERTopic)**：
-   - 採用 `paraphrase-multilingual-MiniLM-L12-v2` 進行跨語言/中文語意向量化。
-   - 底層透過 HDBSCAN + UMAP，物理性地將相似留言聚類，並自動過濾無意義的雜訊酸言酸語。
+2. **多維度輿情分析 (SnowNLP & BERTopic)**：
+   - **情緒分析 (新增)**：整合 `SnowNLP` 進行繁體中文留言的正負向情緒計算。
+   - **主題分群**：採用 `paraphrase-multilingual-MiniLM-L12-v2` 進行跨語言/中文語意向量化，底層透過 HDBSCAN + UMAP 物理性地將相似留言聚類。
 3. **自動命名與總結 (Local LLM)**：
    - 搭載阿里開源的 `Qwen2.5-1.5B-Instruct` 輕量模型（僅需 ~4GB VRAM）。
    - 根據群組的 c-TF-IDF 關鍵字，自動為每個主題命名。
    - 總覽所有主題，生成 3~5 點的「整體輿情總結大綱」。
 4. **互動式檢視工具**：內建命令列檢視器，支援遍歷特定主題下的熱門留言，並提供關鍵字檢索功能。
+5. **網頁視覺化儀表板 (新增)**：整合 `Streamlit` 提供直覺的 UI 介面，以圖表呈現主題分佈、情緒分析結果及關鍵字字雲。
 
 ---
 
@@ -23,9 +24,10 @@
 專案採模組化設計，包含以下核心組件：
 
 *   `backend/scraper.py`：負責串接 API 爬取留言，並將資料結構化寫入 SQLite 資料庫 (`comments.db`)。
-*   `backend/topic_modeling.py`：核心分析引擎。執行 Embedding -> Clustering -> Keyword Extraction -> LLM 命名，並把結果更新回資料庫。
+*   `backend/topic_modeling.py`：核心分析引擎。執行 主題分群 -> 情緒分析(SnowNLP) -> 關鍵字萃取 -> LLM 命名，並把結果更新回資料庫。
 *   `backend/view_comments.py`：檢視器。提供終端機介面讓使用者輕鬆瀏覽分群後的留言與關鍵字。
 *   `generate_demo.py`：報表產生器。可自動輸出一份完整的 `.ipynb` Demo 檔案。
+*   `dashboard.py` **(新增)**：資料視覺化儀表板。利用 Streamlit 將分析結果轉換為直覺的互動式網頁圖表。
 
 ---
 
@@ -37,8 +39,8 @@
 請確認您的環境中已安裝 Python 3.9+，並依照您的 CUDA 版本安裝對應的 PyTorch：
 ```bash
 # 1. 建立虛擬環境 (建議)
-python -m venv backend/venv
-source backend/venv/Scripts/activate  # Windows PowerShell
+python -m venv venv
+.\venv\Scripts\Activate.ps1 # 啟動虛擬環境 (Windows PowerShell)
 
 # 2. 安裝相依套件 (包含 BERTopic, Transformers, Pandas 等)
 pip install -r backend/requirements.txt
@@ -59,8 +61,11 @@ python backend/scraper.py
 # Step 2: 執行主題模型與 LLM 總結 (初次執行會自動下載 HuggingFace 模型權重)
 python backend/topic_modeling.py
 
-# Step 3: 開啟互動式留言檢視器
+# Step 3: 開啟終端機互動式留言檢視器 (可選)
 python backend/view_comments.py
+
+# Step 4: 啟動 Streamlit 視覺化儀表板 (新增)
+streamlit run dashboard.py
 ```
 
 ---
