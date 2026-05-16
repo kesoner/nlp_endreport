@@ -47,7 +47,7 @@ pip install -r backend/requirements.txt
 ```
 
 ### 2. 設定環境變數
-請在 `backend` 資料夾中複製 `.env.example` 並重新命名為 `.env`，填入您的 API Key：
+請在 `backend` 資料夾中的`.env.example`重新命名成`.env`，並填入您的 API Key：
 ```env
 YOUTUBE_API_KEY="您的_Google_Cloud_API_Key"
 ```
@@ -61,7 +61,7 @@ python backend/scraper.py
 # Step 2: 執行主題模型與 LLM 總結 (初次執行會自動下載 HuggingFace 模型權重)
 python backend/topic_modeling.py
 
-# Step 3: 開啟終端機互動式留言檢視器 (可選)
+# Step 3: 開啟互動式留言檢視器
 python backend/view_comments.py
 
 # Step 4: 啟動 Streamlit 視覺化儀表板 (新增)
