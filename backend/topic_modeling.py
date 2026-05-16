@@ -7,7 +7,7 @@ import pandas as pd
 def load_llm():
     print("正在載入本地 LLM (Qwen2.5-1.5B-Instruct)...")
     model_name = "Qwen/Qwen2.5-1.5B-Instruct"
-    device = "cpu" if torch.cuda.is_available() else "cuda"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
